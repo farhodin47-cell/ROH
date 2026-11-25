@@ -5,22 +5,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Телефони Байни Ноҳияҳо</title>
 <style>
-body{margin:0;font-family:sans-serif;background:#F3F6FD;color:#0F1B3D}
-header{background:#0B4BD1;color:#fff;padding:32px 20px}
-h1{margin:0;font-size:26px}
+*{box-sizing:border-box}
+body{margin:0;font-family:sans-serif;background:#F3F6FD;color:#0F1B3D;padding-bottom:72px}
+header{background:#0B4BD1;color:#fff;padding:28px 20px}
+h1{margin:0;font-size:24px;line-height:1.15}
 h1 span{color:#FFC21A}
-main{padding:20px}
-select,button{width:100%;height:48px;margin-bottom:12px;font-size:16px;border-radius:12px;border:1px solid #C9D2E6;padding:0 12px}
-button{background:#0B4BD1;color:#fff;border:0;font-weight:bold}
+h2{font-size:18px;margin:16px 0 8px}
+main{padding:16px}
+.card,.trip{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px}
+select,input{width:100%;height:48px;border:1px solid #C9D2E6;border-radius:12px;padding:0 12px;font-size:16px;background:#fff}
+button,.btn{display:block;width:100%;min-height:48px;margin-top:12px;border:0;border-radius:24px;background:#0B4BD1;color:#fff;font-size:16px;font-weight:bold;text-align:center;line-height:48px;text-decoration:none}
+button.ghost{background:#fff;color:#0B4BD1;border:1px solid #0B4BD1;line-height:normal}
+button.big{background:#fff;color:#0F1B3D;border:2px solid #0B4BD1;border-radius:20px;padding:18px;line-height:1.3;font-size:20px}
+button.big.y{border-color:#FFC21A}
+button.big small{font-weight:normal;color:#5B6470;font-size:14px}
+.row{display:flex;justify-content:space-between;font-size:18px;margin-bottom:4px}
+.mut{color:#5B6470;font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#fff;border-top:1px solid #D5DCEA}
+nav button{margin:0;border-radius:0;background:#fff;color:#5B6470;line-height:normal;min-height:60px}
+nav button.on{color:#0B4BD1;border-top:3px solid #0B4BD1}
 </style>
 </head>
 <body>
 <header><h1>Телефони<br><span>Байни Ноҳияҳо</span></h1></header>
-<main>
-<select><option>Аз: Душанбе</option><option>Данғара</option><option>Норак</option><option>Балҷувон</option><option>Темурмалик</option></select>
-<select><option>Ба: Душанбе</option><option>Данғара</option><option>Норак</option><option>Балҷувон</option><option>Темурмалик</option></select>
-<button>Ҷустуҷӯ кардан</button>
-<p>Ҳоло мошин нест. Ба зудӣ!</p>
-</main>
+<main id="app"></main>
+<nav>
+<button data-t="home" onclick="go('home')">Асосӣ</button>
+<button data-t="post" onclick="go('post')">Эълон</button>
+<button data-t="me" onclick="go('me')">Профил</button>
+</nav>
+<script>
+const R={
+"Душанбе":["Душанбе"],
+"Вилояти Суғд":["Хуҷанд","Конибодом","Исфара","Истаравшан","Панҷакент","Истиқлол","Гулистон","Бустон","Мастчоҳ","Бобоҷон Ғафуров","Ашт","Зафаробод","Спитамен","Ҷаббор Расулов","Шаҳристон","Деваштич","Айнӣ","Кӯҳистони Мастчоҳ"],
+"Вилояти Хатлон":["Бохтар","Кӯлоб","Норак","Левакант","Хуросон","Ёвон","Балҷувон","Ховалинг","Абдураҳмони Ҷомӣ","Данғара","Темурмалик","Мӯминобод","Кӯшониён","Вахш","Восеъ","Шамсиддин Шоҳин","Носири Хусрав","Шаҳритус","Қубодиён","Дӯстӣ","Ҷайҳун","Ҷалолиддин Балхӣ","Фархор","Панҷ","Ҳамадонӣ"],
+"Кӯҳистони Бадахшон":["Хоруғ","Дарвоз","Ванҷ","Рӯшон","Шуғнон","Роштқалъа","Ишкошим","Мурғоб"],
+"Ноҳияҳои тобеи ҷумҳурӣ":["Ҳисор","Турсунзода","Ваҳдат","Роғун","Шаҳринав","Варзоб","Рашт","Лахш","Рӯдакӣ","Файзобод","Нуробод","Тоҷикобод","Сангвор"]
+};
+function load(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const S={user:load('user'),trips:load('trips')||[],tab:'home',role:null,f:'Данғара',t:'Душанбе'};
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function opts(sel){let h='';for(const g in R){h+='<optgroup label="'+g+'">'+R[g].map(p=>'<option'+(p===sel?' selected':'')+'>'+p+'</option>').join('')+'</optgroup>'}return h}
+function card(x){return `<div class="trip"><div class="row"><b>${esc(x.day)} ${esc(x.time)}</b><b>${esc(x.price)} сомонӣ</b></div><div class="mut">${esc(x.name)} · ${esc(x.car)} ${esc(x.plate)}</div><div>${esc(x.seats)} ҷои холӣ</div><a class="btn" href="tel:${esc(x.phone)}">Занг задан</a></div>`}
+function home(){
+const list=S.trips.filter(x=>x.from===S.f&&x.to===S.t);
+return `<div class="card"><label>Аз</label><select id="f">${opts(S.f)}</select><button class="ghost" onclick="swap()">Иваз кардан</button><label>Ба</label><select id="t">${opts(S.t)}</select><button onclick="search()">Ҷустуҷӯ кардан</button></div><h2>Мошинҳо</h2>`+(list.length?list.map(card).join(''):'<p class="mut">Ҳоло мошин нест. Ронандагон дар бахши «Эълон» сафар илова мекунанд.</p>')}
+function search(){S.f=$('f').value;S.t=$('t').value;render()}
+function swap(){const a=$('f').value,b=$('t').value;S.f=b;S.t=a;render()}
+function post(){
+if(!S.user||S.user.role!=='driver')return `<div class="card"><p>Барои эълон кардани сафар аввал ҳамчун ронанда қайд шавед.</p><button onclick="go('me')">Қайд шудан</button></div>`;
+const mine=S.trips.filter(x=>x.phone===S.user.phone);
+return `<div class="card"><label>Аз</label><select id="pf">${opts('Данғара')}</select><label>Ба</label><select id="pt">${opts('Душанбе')}</select><label>Рӯз</label><select id="pd"><option>Имрӯз</option><option>Фардо</option></select><label>Вақти ҳаракат</label><input id="pm" type="time"><label>Ҷойҳои холӣ</label><input id="ps" type="number" min="1" max="8" value="3"><label>Нарх (сомонӣ)</label><input id="pp" type="number" min="0"><button onclick="addTrip()">Эълон кардан</button></div><h2>Эълонҳои ман</h2>`+(mine.length?mine.map(x=>`<div class="trip"><div class="row"><b>${esc(x.from)} → ${esc(x.to)}</b><span>${esc(x.day)} ${esc(x.time)}</span></div><button class="ghost" onclick="delTrip(${x.id})">Мошин пур шуд / Бекор кардан</button></div>`).join(''):'<p class="mut">Ҳоло эълон нест.</p>')}
+function addTrip(){
+const m=$('pm').value,p=$('pp').value,a=$('pf').value,b=$('pt').value;
+if(!m||!p){alert('Вақт ва нархро нависед');return}
+if(a===b){alert('Самти «аз» ва «ба» набояд яксон бошад');return}
+S.trips.push({id:Date.now(),from:a,to:b,day:$('pd').value,time:m,seats:$('ps').value,price:p,name:S.user.name,car:S.user.car,plate:S.user.plate,phone:S.user.phone});
+save('trips',S.trips);render()}
+function delTrip(id){S.trips=S.trips.filter(x=>x.id!==id);save('trips',S.trips);render()}
+function me(){
+if(S.user){const u=S.user;return `<div class="card"><h2>${esc(u.name)}</h2><p>${u.role==='driver'?'Ронанда':'Муштарӣ'} · ${esc(u.phone)}</p>${u.role==='driver'?`<p class="mut">${esc(u.car)} · ${esc(u.plate)}</p>`:''}<button class="ghost" onclick="logout()">Баромадан</button></div>`}
+if(!S.role)return `<h2>Шумо кистед?</h2><button class="big" onclick="pick('customer')">Муштарӣ<br><small>Ман такси мехоҳам</small></button><button class="big y" onclick="pick('driver')">Ронанда (такси)<br><small>Ман мусофир мебарам</small></button>`;
+const d=S.role==='driver';
+return `<div class="card"><h2>${d?'Қайди ронанда':'Қайди муштарӣ'}</h2><label>Ном ва насаб</label><input id="rn"><label>Рақами телефон (+992)</label><input id="rp" type="tel" placeholder="9XXXXXXXX">${d?`<label>Мошин (марка)</label><input id="rc"><label>Рақами давлатии мошин</label><input id="rl">`:''}<button onclick="reg()">Қайд шудан</button><p class="mut">Тасдиқи рамзи СМС баъдтар илова мешавад.</p><button class="ghost" onclick="pick(null)">Бозгашт</button></div>`}
+function pick(r){S.role=r;render()}
+function reg(){
+const n=$('rn').value.trim(),p=$('rp').value.replace(/\D/g,'').replace(/^992/,'');
+if(!n||p.length!==9){alert('Ном ва рақами 9-рақамаро дуруст нависед');return}
+const u={role:S.role,name:n,phone:'+992'+p};
+if(S.role==='driver'){u.car=$('rc').value.trim();u.plate=$('rl').value.trim();if(!u.car||!u.plate){alert('Мошин ва рақамро нависед');return}}
+S.user=u;save('user',u);S.tab=u.role==='driver'?'post':'home';S.role=null;render()}
+function logout(){S.user=null;try{localStorage.removeItem('user')}catch(e){}render()}
+function go(t){S.tab=t;render()}
+function render(){
+$('app').innerHTML={home:home,post:post,me:me}[S.tab]();
+document.querySelectorAll('nav button').forEach(b=>{b.className=b.dataset.t===S.tab?'on':''});
+window.scrollTo(0,0)}
+render();
+</script>
 </body>
 </html>
