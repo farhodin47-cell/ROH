@@ -1,0 +1,27 @@
+{
+ "id": "./",
+ "name": "Телефони Байни Ноҳияҳо",
+ "short_name": "Байни Ноҳияҳо",
+ "description": "Таксиҳои байни ноҳияҳо ва деҳаҳои Тоҷикистон",
+ "lang": "tg",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#F3F6FD",
+ "theme_color": "#0B4BD1",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}
