@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Телефони Байни Ноҳияҳо</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B4BD1">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:sans-serif;background:#F3F6FD;color:#0F1B3D;padding-bottom:72px}
@@ -102,6 +105,7 @@ if(S.tab==='home'){if($('f')){S.f=$('f').value;S.t=$('t').value}$('app').innerHT
 else if(S.tab==='post'&&$('mine')&&S.user)$('mine').innerHTML=mineHtml()}
 onSnapshot(collection(db,'trips'),snap=>{S.trips=snap.docs.map(d=>({...d.data(),id:d.id}));S.err='';refresh()},e=>{S.err='Базаи маълумот пайваст нашуд. Қоидаҳои Firestore-ро санҷед.';refresh()});
 Object.assign(window,{go,swap,search,addTrip,delTrip,pick,reg,logout});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
 </script>
 </body>
