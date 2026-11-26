@@ -35,7 +35,18 @@ nav button.on{color:#0B4BD1;border-top:3px solid #0B4BD1}
 <button data-t="post" onclick="go('post')">Эълон</button>
 <button data-t="me" onclick="go('me')">Профил</button>
 </nav>
-<script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getFirestore,collection,addDoc,deleteDoc,doc,onSnapshot}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const app=initializeApp({
+apiKey:"AIzaSyBZUDW6O-VnJp5ZZJMbOJxGpYV0DB4NEkY",
+authDomain:"taxi-roh.firebaseapp.com",
+projectId:"taxi-roh",
+storageBucket:"taxi-roh.firebasestorage.app",
+messagingSenderId:"96810728626",
+appId:"1:96810728626:web:eb5ba19098910216ea9dab"
+});
+const db=getFirestore(app);
 const R={
 "Душанбе":["Душанбе"],
 "Вилояти Суғд":["Хуҷанд","Конибодом","Исфара","Истаравшан","Панҷакент","Истиқлол","Гулистон","Бустон","Мастчоҳ","Бобоҷон Ғафуров","Ашт","Зафаробод","Спитамен","Ҷаббор Расулов","Шаҳристон","Деваштич","Айнӣ","Кӯҳистони Мастчоҳ"],
@@ -45,27 +56,29 @@ const R={
 };
 function load(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-const S={user:load('user'),trips:load('trips')||[],tab:'home',role:null,f:'Данғара',t:'Душанбе'};
+const S={user:load('user'),trips:[],err:'',tab:'home',role:null,f:'Данғара',t:'Душанбе'};
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function opts(sel){let h='';for(const g in R){h+='<optgroup label="'+g+'">'+R[g].map(p=>'<option'+(p===sel?' selected':'')+'>'+p+'</option>').join('')+'</optgroup>'}return h}
+function fresh(){return S.trips.filter(x=>Date.now()-(x.created||0)<129600000)}
 function card(x){return `<div class="trip"><div class="row"><b>${esc(x.day)} ${esc(x.time)}</b><b>${esc(x.price)} сомонӣ</b></div><div class="mut">${esc(x.name)} · ${esc(x.car)} ${esc(x.plate)}</div><div>${esc(x.seats)} ҷои холӣ</div><a class="btn" href="tel:${esc(x.phone)}">Занг задан</a></div>`}
 function home(){
-const list=S.trips.filter(x=>x.from===S.f&&x.to===S.t);
-return `<div class="card"><label>Аз</label><select id="f">${opts(S.f)}</select><button class="ghost" onclick="swap()">Иваз кардан</button><label>Ба</label><select id="t">${opts(S.t)}</select><button onclick="search()">Ҷустуҷӯ кардан</button></div><h2>Мошинҳо</h2>`+(list.length?list.map(card).join(''):'<p class="mut">Ҳоло мошин нест. Ронандагон дар бахши «Эълон» сафар илова мекунанд.</p>')}
+const list=fresh().filter(x=>x.from===S.f&&x.to===S.t).sort((a,b)=>(a.day+a.time<b.day+b.time?-1:1));
+return `<div class="card"><label>Аз</label><select id="f">${opts(S.f)}</select><button class="ghost" onclick="swap()">Иваз кардан</button><label>Ба</label><select id="t">${opts(S.t)}</select><button onclick="search()">Ҷустуҷӯ кардан</button></div><h2>Мошинҳо</h2>`+(S.err?`<p class="mut">${S.err}</p>`:'')+(list.length?list.map(card).join(''):'<p class="mut">Ҳоло мошин нест. Ронандагон дар бахши «Эълон» сафар илова мекунанд.</p>')}
 function search(){S.f=$('f').value;S.t=$('t').value;render()}
 function swap(){const a=$('f').value,b=$('t').value;S.f=b;S.t=a;render()}
+function mineHtml(){
+const mine=fresh().filter(x=>x.phone===S.user.phone);
+return mine.length?mine.map(x=>`<div class="trip"><div class="row"><b>${esc(x.from)} → ${esc(x.to)}</b><span>${esc(x.day)} ${esc(x.time)}</span></div><button class="ghost" onclick="delTrip('${x.id}')">Мошин пур шуд / Бекор кардан</button></div>`).join(''):'<p class="mut">Ҳоло эълон нест.</p>'}
 function post(){
 if(!S.user||S.user.role!=='driver')return `<div class="card"><p>Барои эълон кардани сафар аввал ҳамчун ронанда қайд шавед.</p><button onclick="go('me')">Қайд шудан</button></div>`;
-const mine=S.trips.filter(x=>x.phone===S.user.phone);
-return `<div class="card"><label>Аз</label><select id="pf">${opts('Данғара')}</select><label>Ба</label><select id="pt">${opts('Душанбе')}</select><label>Рӯз</label><select id="pd"><option>Имрӯз</option><option>Фардо</option></select><label>Вақти ҳаракат</label><input id="pm" type="time"><label>Ҷойҳои холӣ</label><input id="ps" type="number" min="1" max="8" value="3"><label>Нарх (сомонӣ)</label><input id="pp" type="number" min="0"><button onclick="addTrip()">Эълон кардан</button></div><h2>Эълонҳои ман</h2>`+(mine.length?mine.map(x=>`<div class="trip"><div class="row"><b>${esc(x.from)} → ${esc(x.to)}</b><span>${esc(x.day)} ${esc(x.time)}</span></div><button class="ghost" onclick="delTrip(${x.id})">Мошин пур шуд / Бекор кардан</button></div>`).join(''):'<p class="mut">Ҳоло эълон нест.</p>')}
-function addTrip(){
+return `<div class="card"><label>Аз</label><select id="pf">${opts('Данғара')}</select><label>Ба</label><select id="pt">${opts('Душанбе')}</select><label>Рӯз</label><select id="pd"><option>Имрӯз</option><option>Фардо</option></select><label>Вақти ҳаракат</label><input id="pm" type="time"><label>Ҷойҳои холӣ</label><input id="ps" type="number" min="1" max="8" value="3"><label>Нарх (сомонӣ)</label><input id="pp" type="number" min="0"><button onclick="addTrip()">Эълон кардан</button></div><h2>Эълонҳои ман</h2><div id="mine">${mineHtml()}</div>`}
+async function addTrip(){
 const m=$('pm').value,p=$('pp').value,a=$('pf').value,b=$('pt').value;
 if(!m||!p){alert('Вақт ва нархро нависед');return}
 if(a===b){alert('Самти «аз» ва «ба» набояд яксон бошад');return}
-S.trips.push({id:Date.now(),from:a,to:b,day:$('pd').value,time:m,seats:$('ps').value,price:p,name:S.user.name,car:S.user.car,plate:S.user.plate,phone:S.user.phone});
-save('trips',S.trips);render()}
-function delTrip(id){S.trips=S.trips.filter(x=>x.id!==id);save('trips',S.trips);render()}
+try{await addDoc(collection(db,'trips'),{from:a,to:b,day:$('pd').value,time:m,seats:$('ps').value,price:p,name:S.user.name,car:S.user.car,plate:S.user.plate,phone:S.user.phone,created:Date.now()});$('pm').value='';$('pp').value=''}catch(e){alert('Эълон нашуд. Интернет ва қоидаҳои базаро санҷед.')}}
+async function delTrip(id){try{await deleteDoc(doc(db,'trips',id))}catch(e){alert('Нашуд. Боз кӯшиш кунед.')}}
 function me(){
 if(S.user){const u=S.user;return `<div class="card"><h2>${esc(u.name)}</h2><p>${u.role==='driver'?'Ронанда':'Муштарӣ'} · ${esc(u.phone)}</p>${u.role==='driver'?`<p class="mut">${esc(u.car)} · ${esc(u.plate)}</p>`:''}<button class="ghost" onclick="logout()">Баромадан</button></div>`}
 if(!S.role)return `<h2>Шумо кистед?</h2><button class="big" onclick="pick('customer')">Муштарӣ<br><small>Ман такси мехоҳам</small></button><button class="big y" onclick="pick('driver')">Ронанда (такси)<br><small>Ман мусофир мебарам</small></button>`;
@@ -84,6 +97,11 @@ function render(){
 $('app').innerHTML={home:home,post:post,me:me}[S.tab]();
 document.querySelectorAll('nav button').forEach(b=>{b.className=b.dataset.t===S.tab?'on':''});
 window.scrollTo(0,0)}
+function refresh(){
+if(S.tab==='home'){if($('f')){S.f=$('f').value;S.t=$('t').value}$('app').innerHTML=home()}
+else if(S.tab==='post'&&$('mine')&&S.user)$('mine').innerHTML=mineHtml()}
+onSnapshot(collection(db,'trips'),snap=>{S.trips=snap.docs.map(d=>({...d.data(),id:d.id}));S.err='';refresh()},e=>{S.err='Базаи маълумот пайваст нашуд. Қоидаҳои Firestore-ро санҷед.';refresh()});
+Object.assign(window,{go,swap,search,addTrip,delTrip,pick,reg,logout});
 render();
 </script>
 </body>
