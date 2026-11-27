@@ -104,7 +104,8 @@ const S={user:load('user'),trips:[],drivers:{},live:{},err:'',loaded:false,tab:'
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dig(p){return String(p||'').replace(/\D/g,'').replace(/^992/,'')}
-function ph(v){const d=dig(v).replace(/^0+/,'');return d.length===9?d:''}
+function ph(v){let d=dig(v);if(d.length===10&&d[0]==='0')d=d.slice(1);return d.length===9?d:''}
+function tl(p){const d=dig(p);return d[0]==='0'?d:'+992'+d}
 function fmt(p){const d=dig(p);return d.length===9?'+992 '+d.slice(0,2)+' '+d.slice(2,5)+' '+d.slice(5,7)+' '+d.slice(7):String(p||'')}
 function did(u){return dig(u&&u.phone)}
 function safeImg(s){return typeof s==='string'&&s.startsWith('data:image/jpeg;base64,')&&!/["'<>\s]/.test(s)?s:''}
@@ -118,7 +119,7 @@ function avatar(d,name,sz){const im=safeImg(d&&d.photo),st=sz?`style="width:${sz
 function card(x){
 const d=S.drivers[x.did]||{},name=d.name||x.name,on=isOn(x.did);
 const info=d.age?`${esc(d.age)} сола${d.from?' · аз '+esc(d.from):''}`:'';
-return `<div class="trip"><div class="tt"><div><div class="tm">${esc(x.time)}</div><div class="dy">${esc(x.day)}</div></div><div class="pr">${esc(x.price)}<small> сомонӣ</small></div></div><div class="dr">${avatar(d,name)}<div><b>${esc(name)}</b>${d.verified?' <span class="badge ok">Санҷида шуд</span>':''}<div class="mut">${info?info+'<br>':''}${esc(x.car)} · <span class="pl">${esc(x.plate)}</span></div>${on?'<div class="onl">● Дар роҳ, онлайн</div>':''}</div></div><div class="st">${seats(x.seats)}<span>${esc(x.seats)} ҷои холӣ</span></div><a class="btn" href="tel:${esc(x.phone)}">${PH} Занг задан</a>${d.phone2?`<a class="l2" href="tel:${esc(d.phone2)}">Рақами дуюм: ${esc(fmt(d.phone2))}</a>`:''}${on?`<button class="ghost" onclick="showOnMap('${esc(x.did)}')">Дар харита дидан</button>`:''}</div>`}
+return `<div class="trip"><div class="tt"><div><div class="tm">${esc(x.time)}</div><div class="dy">${esc(x.day)}</div></div><div class="pr">${esc(x.price)}<small> сомонӣ</small></div></div><div class="dr">${avatar(d,name)}<div><b>${esc(name)}</b>${d.verified?' <span class="badge ok">Санҷида шуд</span>':''}<div class="mut">${info?info+'<br>':''}${esc(x.car)} · <span class="pl">${esc(x.plate)}</span></div>${on?'<div class="onl">● Дар роҳ, онлайн</div>':''}</div></div><div class="st">${seats(x.seats)}<span>${esc(x.seats)} ҷои холӣ</span></div><a class="btn" href="tel:${esc(tl(x.phone))}">${PH} Занг задан</a>${d.phone2?`<a class="l2" href="tel:${esc(tl(d.phone2))}">Рақами дуюм: ${esc(fmt(d.phone2))}</a>`:''}${on?`<button class="ghost" onclick="showOnMap('${esc(x.did)}')">Дар харита дидан</button>`:''}</div>`}
 function empty(t,s){return `<div class="empty">${CAR}<b>${t}</b>${s}</div>`}
 function home(){
 const list=fresh().filter(x=>x.from===S.f&&x.to===S.t).sort((a,b)=>(a.day+a.time<b.day+b.time?-1:1));
@@ -144,7 +145,7 @@ liveList().forEach(x=>{
 const d=S.drivers[x.did]||{};
 const ic=L.divIcon({className:'',html:'<div class="mk">'+CARW+'</div>',iconSize:[34,34],iconAnchor:[17,17]});
 const m=L.marker([x.lat,x.lng],{icon:ic}).addTo(S.layer);
-m.bindPopup(`<b>${esc(x.name)}</b><br>${esc(d.car||'')} ${esc(d.plate||'')}<br>${x.from?esc(x.from)+' → '+esc(x.to)+'<br>':''}Охирин навсозӣ: ${ago(x.t)}<br><a href="tel:${esc(d.phone||'')}">Занг задан</a>`);
+m.bindPopup(`<b>${esc(x.name)}</b><br>${esc(d.car||'')} ${esc(d.plate||'')}<br>${x.from?esc(x.from)+' → '+esc(x.to)+'<br>':''}Охирин навсозӣ: ${ago(x.t)}<br><a href="tel:${esc(tl(d.phone||''))}">Занг задан</a>`);
 if(S.focus===x.did)fm=m});
 if(fm){S.map.setView(fm.getLatLng(),12);fm.openPopup();S.focus=null}}
 function showOnMap(id){S.focus=id;go('map')}
