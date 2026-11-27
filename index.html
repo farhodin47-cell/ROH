@@ -233,7 +233,7 @@ try{lock=await navigator.wakeLock.request('screen')}catch(e){}
 wid=navigator.geolocation.watchPosition(pos=>{
 const now=Date.now();if(now-lastW<10000)return;lastW=now;
 const my=fresh().filter(x=>x.did===did(S.user)).sort((a,b)=>b.created-a.created)[0]||{};
-setDoc(doc(db,'live',did(S.user)),{lat:pos.coords.latitude,lng:pos.coords.longitude,t:now,name:S.user.name,did:did(S.user),from:my.from||'',to:my.to||''}).catch(()=>{})},
+setDoc(doc(db,'live',did(S.user)),{lat:pos.coords.latitude,lng:pos.coords.longitude,t:now,name:S.user.name,did:did(S.user),from:my.from||'',to:my.to||''}).then(()=>{S.warned=0}).catch(()=>{if(!S.warned){S.warned=1;alert('Мавқеъ ба база нарасид. Қоидаҳои Firestore-ро (бахши live) нашр кунед ва интернетро санҷед.')}})},
 ()=>{alert('Мавқеъ гирифта нашуд. Дар танзимоти телефон иҷозати мавқеъро диҳед.');stopShare()},
 {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
 render()}
