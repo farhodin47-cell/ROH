@@ -57,7 +57,7 @@ button.q{margin:0;min-height:52px;border-radius:14px;background:#E3EBFB;color:va
 .onl{color:#14733E;font-weight:700;font-size:13px}
 .l2{display:block;text-align:center;margin-top:10px;color:var(--b);font-weight:600;font-size:14px}
 .pv{display:none;width:96px;height:96px;object-fit:cover;border-radius:12px;margin-top:8px}
-#map{height:calc(100vh - 220px);min-height:320px;border-radius:16px;overflow:hidden}
+#map{height:52vh;min-height:320px;border-radius:16px;overflow:hidden}
 .mk{width:34px;height:34px;border-radius:17px;background:#0B4BD1;border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 nav{position:fixed;left:0;right:0;bottom:0;z-index:2000;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 nav button{margin:0;border-radius:0;background:#fff;color:var(--mut);min-height:62px;flex-direction:column;gap:2px;font-size:12px;font-weight:600}
@@ -71,11 +71,15 @@ nav button svg{stroke:currentColor}
 .sh{font-size:12px;color:#5B6470;margin:6px 0 0}
 .ed{width:44px;height:44px;min-height:0;margin:0;padding:0;border-radius:22px;background:#E3EBFB;flex:none;display:flex;align-items:center;justify-content:center}
 .ed.abs{position:absolute;right:12px;top:12px}
+#bn{display:none;background:#FFC21A;color:#0F1B3D;font-weight:700;padding:12px 16px;text-align:center;position:sticky;top:0;z-index:1600}
+#bn.on{display:block}
+.drv{filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
 </style>
 </head>
 <body>
 <header id="hd"><div class="hd"><h1>Таксии <br><span>байни ноҳияҳо</span></h1><div class="tag">Сафари осон, беҳтар ва зуд!</div></div>
 <svg viewBox="0 0 390 120" aria-hidden="true"><polygon points="0,62 55,28 95,48 165,8 235,50 300,22 390,56 390,120 0,120" fill="#7C9BC9"/><polygon points="165,8 150,26 162,23 170,31 182,20" fill="#fff"/><polygon points="300,22 288,35 297,32 306,38" fill="#fff"/><path d="M0 70 Q95 52 195 72 T390 64 V120 H0Z" fill="#4F8F4D"/><polygon points="0,88 390,76 390,98 0,110" fill="#4A5160"/><line x1="0" y1="99" x2="390" y2="87" stroke="#FFC21A" stroke-width="2" stroke-dasharray="14 12"/><polygon points="0,110 390,98 390,120 0,120" fill="#3F7A40"/><rect x="246" y="66" width="124" height="22" rx="9" fill="#fff"/><path d="M268 66l15-16h42l16 16z" fill="#fff"/><path d="M277 65l11-11h34l11 11z" fill="#2B3A55"/><circle cx="276" cy="88" r="9" fill="#1B2230"/><circle cx="350" cy="88" r="9" fill="#1B2230"/></svg></header>
+<div id="bn" onclick="go('map')"></div>
 <main id="app"></main>
 <nav>
 <button data-t="home" onclick="go('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Асосӣ</button>
@@ -108,7 +112,7 @@ const CAR='<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#
 const CARW='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5zM3 12h18"/></svg>';
 function load(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-const S={edit:false,editTrip:null,user:load('user'),trips:[],drivers:{},live:{},err:'',loaded:false,tab:'home',role:null,f:'Данғара',t:'Душанбе',tmp:{},sharing:false,focus:null,map:null,layer:null};
+const S={edit:false,editTrip:null,user:load('user'),trips:[],drivers:{},live:{},hd:{},orders:{},me:null,fitFor:'',err:'',loaded:false,tab:'home',role:null,f:'Данғара',t:'Душанбе',tmp:{},sharing:false,focus:null,map:null,layer:null};
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dig(p){return String(p||'').replace(/\D/g,'').replace(/^992/,'')}
@@ -150,7 +154,7 @@ return `<div class="card sc"><div class="sr"><div class="col"><label>Аз</label
 function quick(a,b){S.f=a;S.t=b;render()}
 function search(){S.f=$('f').value;S.t=$('t').value;render()}
 function swap(){const a=$('f').value,b=$('t').value;S.f=b;S.t=a;render()}
-function mapView(){return `<div class="mut" style="margin:0 2px 8px">Ронандагони онлайн: <b id="cnt">${liveList().length}</b></div><div id="map"></div>`}
+function mapView(){return `<div id="ord">${ordHtml()}</div><div class="mut" style="margin:0 2px 8px">Ронандагони онлайн: <b id="cnt">${liveList().length}</b></div><div id="map"></div><div id="near">${nearHtml()}</div>`}
 function drawMap(){
 const el=$('map');if(!el)return;
 if(!window.L){el.innerHTML=empty('Харита боргирӣ нашуд','Интернетро санҷед ва саҳифаро нав кунед.');return}
@@ -158,14 +162,56 @@ S.map=L.map('map').setView([38.6,70.8],7);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(S.map);
 S.layer=L.layerGroup().addTo(S.map);markers()}
 function markers(){
-if(!S.map)return;S.layer.clearLayers();let fm=null;
+if(!S.map)return;S.layer.clearLayers();let fm=null;const id=myId(),o=myOrder();
 liveList().forEach(x=>{
-const d=S.drivers[x.did]||{};
-const ic=L.divIcon({className:'',html:'<div class="mk">'+CARW+'</div>',iconSize:[34,34],iconAnchor:[17,17]});
-const m=L.marker([x.lat,x.lng],{icon:ic}).addTo(S.layer);
-m.bindPopup(`<b>${esc(x.name)}</b><br>${esc(d.car||'')} ${esc(d.plate||'')}<br>${x.from?esc(x.from)+' → '+esc(x.to)+'<br>':''}Охирин навсозӣ: ${ago(x.t)}<br><a href="tel:${esc(tl(d.phone||''))}">Занг задан</a>`);
+const d=S.drivers[x.did]||{},tr=!!o&&o.did===x.did&&o.status!=='declined';
+const ic=tr?L.divIcon({className:'',html:`<div class="drv" style="transform:rotate(${S.hd[x.did]||0}deg)">${CARTOP}</div>`,iconSize:[22,40],iconAnchor:[11,20]}):L.divIcon({className:'',html:'<div class="mk">'+CARW+'</div>',iconSize:[34,34],iconAnchor:[17,17]});
+const m=L.marker([x.lat,x.lng],{icon:ic,zIndexOffset:tr?1000:0}).addTo(S.layer);
+m.bindPopup(`<b>${esc(x.name)}</b><br>${esc(d.car||'')} ${esc(d.plate||'')}<br>${x.from?esc(x.from)+' → '+esc(x.to)+'<br>':''}Охирин навсозӣ: ${ago(x.t)}<br><a href="tel:${esc(tl(d.phone||''))}">Занг задан</a>${x.did!==id?`<br><a href="#" onclick="orderTo('${x.did}');return false">Фармоиш додан</a>`:''}`);
 if(S.focus===x.did)fm=m});
+if(S.me)L.circleMarker([S.me.lat,S.me.lng],{radius:8,color:'#fff',weight:3,fillColor:'#0B4BD1',fillOpacity:1}).addTo(S.layer).bindTooltip('Шумо');
+incoming().forEach(([k,r])=>L.circleMarker([r.plat,r.plng],{radius:9,color:'#fff',weight:3,fillColor:'#E53935',fillOpacity:1}).addTo(S.layer).bindTooltip(esc(r.name)));
+if(o&&o.status!=='declined'&&S.live[o.did]){const l=S.live[o.did];
+L.circleMarker([o.plat,o.plng],{radius:9,color:'#fff',weight:3,fillColor:'#E53935',fillOpacity:1}).addTo(S.layer).bindTooltip('Ҷойи савор шудан');
+L.polyline([[l.lat,l.lng],[o.plat,o.plng]],{color:'#0B4BD1',weight:4,dashArray:'6 8'}).addTo(S.layer);
+const key=o.did+o.status;if(S.fitFor!==key&&o.status!=='new'){S.fitFor=key;S.map.fitBounds([[l.lat,l.lng],[o.plat,o.plng]],{padding:[60,60],maxZoom:15})}}
 if(fm){S.map.setView(fm.getLatLng(),12);fm.openPopup();S.focus=null}}
+const CARTOP='<svg width="22" height="40" viewBox="0 0 22 40" aria-hidden="true"><rect x="2" y="2" width="18" height="36" rx="8" fill="#fff" stroke="#0B4BD1" stroke-width="2.5"/><rect x="5" y="9" width="12" height="7" rx="2" fill="#2B3A55"/><rect x="5" y="24" width="12" height="6" rx="2" fill="#2B3A55"/></svg>';
+function dist(a,b,c,d){const r=x=>x*Math.PI/180,p=r(c-a),q=r(d-b),h=Math.sin(p/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(q/2)**2;return 12742*Math.asin(Math.sqrt(h))}
+function bearing(a,b,c,d){const r=x=>x*Math.PI/180,y=Math.sin(r(d-b))*Math.cos(r(c)),x=Math.cos(r(a))*Math.sin(r(c))-Math.sin(r(a))*Math.cos(r(c))*Math.cos(r(d-b));return (Math.atan2(y,x)*180/Math.PI+360)%360}
+function fmtKm(k){return k<1?Math.round(k*1000)+' м':k.toFixed(1)+' км'}
+function eta(k){return Math.max(1,Math.round(k/40*60))}
+function myId(){return S.user?did(S.user):''}
+function myOrder(){const o=S.orders[myId()];return o&&Date.now()-o.created<1800000?o:null}
+function incoming(){const id=myId();return Object.entries(S.orders).filter(([k,o])=>id&&o.did===id&&['new','accepted','arrived'].includes(o.status)&&Date.now()-o.created<1800000)}
+function banner(){const b=$('bn');if(!b)return;const n=incoming().filter(([k,o])=>o.status==='new').length;b.className=n&&S.tab!=='map'?'on':'';b.textContent=n?'Фармоиши нав ('+n+')! Пахш кунед':''}
+function getMe(force){return new Promise(res=>{if(S.me&&!force)return res(S.me);if(!navigator.geolocation)return res(null);navigator.geolocation.getCurrentPosition(p=>{S.me={lat:p.coords.latitude,lng:p.coords.longitude};res(S.me)},()=>res(null),{enableHighAccuracy:true,timeout:15000,maximumAge:30000})})}
+async function findMe(){const m=await getMe(true);if(!m){alert('Мавқеъ гирифта нашуд. Дар танзимоти телефон иҷозати мавқеъро диҳед.');return}refresh();if(S.map)S.map.setView([m.lat,m.lng],12)}
+async function orderTo(id){
+if(!S.user){alert('Аввал дар «Профил» қайд шавед');go('me');return}
+if(id===myId())return;
+const m=await getMe();if(!m){alert('Барои фармоиш мавқеи шумо лозим аст. Иҷозати мавқеъро диҳед.');return}
+const pid=myId();
+try{await deleteDoc(doc(db,'orders',pid)).catch(()=>{});await setDoc(doc(db,'orders',pid),{pid,name:(S.user.name||'Мусофир').split(' ')[0].slice(0,30),plat:Math.round(m.lat*1000)/1000,plng:Math.round(m.lng*1000)/1000,did:id,status:'new',created:Date.now()})}catch(e){alert('Фармоиш нарасид. Интернетро санҷед.')}}
+async function setOrder(pid,st){try{await updateDoc(doc(db,'orders',pid),{status:st,updated:Date.now()})}catch(e){alert('Нашуд. Интернетро санҷед.')}}
+async function doneOrder(pid){try{await deleteDoc(doc(db,'orders',pid))}catch(e){}}
+function cancelOrder(){doneOrder(myId())}
+function ordHtml(){
+const id=myId();let h='';const o=myOrder();
+if(o){const d=S.drivers[o.did]||{},l=S.live[o.did],k=l?dist(l.lat,l.lng,o.plat,o.plng):null;
+const t={new:'Интизори ҷавоби ронанда…',accepted:'Ронанда қабул кард ва меояд',arrived:'Ронанда расид!',declined:'Ронанда рад кард. Ронандаи дигарро интихоб кунед.'}[o.status]||'';
+h+=`<div class="card"><b>${esc(d.name||'Ронанда')}</b><div class="mut">${esc(d.car||'')} ${esc(d.plate||'')}</div><p style="font-weight:700;margin:8px 0">${t}</p>${o.status==='accepted'&&k!=null?`<p class="mut">Масофа: ${fmtKm(k)} · тақрибан ${eta(k)} дақиқа</p>`:''}${d.phone&&o.status!=='declined'?`<a class="btn" href="tel:${esc(tl(d.phone))}">${PH} Занг задан</a>`:''}<button class="ghost" onclick="cancelOrder()">${o.status==='declined'?'Пӯшидан':'Фармоишро бекор кардан'}</button></div>`}
+incoming().forEach(([pid,o])=>{const l=S.live[id];
+h+=`<div class="card" style="border:2px solid #FFC21A"><b>Мусофир: ${esc(o.name)}</b><div class="mut">${l?'Масофа: '+fmtKm(dist(l.lat,l.lng,o.plat,o.plng)):'Барои дидани масофа «Онлайн шудан»-ро пахш кунед'}</div>${o.status==='new'?`<button onclick="setOrder('${pid}','accepted')">Қабул кардан</button><button class="ghost" onclick="setOrder('${pid}','declined')">Рад кардан</button>`:`<button onclick="setOrder('${pid}','arrived')">Расидам</button><button class="ghost" onclick="doneOrder('${pid}')">Анҷом ёфт</button>`}</div>`});
+return h}
+function nearHtml(){
+const id=myId(),me=S.me;
+let h=`<button class="ghost" onclick="findMe()">${me?'Мавқеи маро нав кардан':'Мавқеи ман ва мошинҳои наздик'}</button><h2>${me?'Мошинҳои наздик':'Ронандагони онлайн'}</h2>`;
+const L2=liveList().filter(x=>x.did!==id).map(x=>({x,k:me?dist(me.lat,me.lng,x.lat,x.lng):null}));
+if(me)L2.sort((a,b)=>a.k-b.k);
+if(!L2.length)return h+'<p class="mut">Ҳоло ронандаи онлайн нест.</p>';
+L2.forEach(({x,k})=>{const d=S.drivers[x.did]||{};h+=`<div class="trip"><div class="dr" style="margin:0 0 8px">${avatar(d,x.name,42)}<div><b>${esc(x.name)}</b><div class="mut">${esc(d.car||'')} ${esc(d.plate||'')}${k!=null?' · '+fmtKm(k)+' · ~'+eta(k)+' дақ':''}</div></div></div><button onclick="orderTo('${x.did}')">Фармоиш додан</button></div>`});
+return h}
 function showOnMap(id){S.focus=id;go('map')}
 function mineHtml(){
 const mine=fresh().filter(x=>x.did===did(S.user)||x.phone===S.user.phone);
@@ -259,17 +305,18 @@ if(S.map){S.map.remove();S.map=null}
 $('hd').className=S.tab==='home'?'':'bar';
 $('app').innerHTML={home:home,map:mapView,post:post,me:me}[S.tab]();
 document.querySelectorAll('nav button').forEach(b=>{b.className=b.dataset.t===S.tab?'on':''});
-if(S.tab==='map')drawMap();
+if(S.tab==='map')drawMap();banner();
 window.scrollTo(0,0)}
-function refresh(){
+function refresh(){banner();
 if(S.tab==='home'){if($('f')){S.f=$('f').value;S.t=$('t').value}$('app').innerHTML=home()}
 else if(S.tab==='post'&&$('mine')&&S.user)$('mine').innerHTML=mineHtml();
-else if(S.tab==='map'){markers();const c=$('cnt');if(c)c.textContent=liveList().length}}
+else if(S.tab==='map'){markers();const c=$('cnt');if(c)c.textContent=liveList().length;if($('ord'))$('ord').innerHTML=ordHtml();if($('near'))$('near').innerHTML=nearHtml()}}
 const ERR='Базаи маълумот пайваст нашуд. Қоидаҳои Firestore-ро санҷед.';
 onSnapshot(collection(db,'trips'),s=>{S.trips=s.docs.map(d=>({...d.data(),id:d.id}));S.err='';S.loaded=true;refresh()},()=>{S.err=ERR;refresh()});
 onSnapshot(collection(db,'drivers'),s=>{S.drivers={};s.docs.forEach(d=>{S.drivers[d.id]=d.data()});refresh()},()=>{});
-onSnapshot(collection(db,'live'),s=>{S.live={};s.docs.forEach(d=>{S.live[d.id]=d.data()});refresh()},()=>{});
-Object.assign(window,{editProf,saveProf,editTripF,saveTrip,seatTap,go,quick,swap,search,addTrip,delTrip,pick,reg,logout,render,S,pickFile,startShare,stopShare,showOnMap});
+onSnapshot(collection(db,'live'),s=>{const old=S.live;S.live={};s.docs.forEach(d=>{const v=d.data(),o=old[d.id];if(o&&dist(o.lat,o.lng,v.lat,v.lng)>0.005)S.hd[d.id]=bearing(o.lat,o.lng,v.lat,v.lng);S.live[d.id]=v});refresh()},()=>{});
+onSnapshot(collection(db,'orders'),s=>{const old=S.orders;S.orders={};s.docs.forEach(d=>{S.orders[d.id]=d.data()});if(incoming().some(([k,o])=>o.status==='new'&&!(old[k]&&old[k].status==='new')))try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}refresh()},()=>{});
+Object.assign(window,{orderTo,setOrder,doneOrder,cancelOrder,findMe,editProf,saveProf,editTripF,saveTrip,seatTap,go,quick,swap,search,addTrip,delTrip,pick,reg,logout,render,S,pickFile,startShare,stopShare,showOnMap});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
 </script>
