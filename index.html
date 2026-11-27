@@ -141,7 +141,7 @@ function avatar(d,name,sz){const im=safeImg(d&&d.photo),st=sz?`style="width:${sz
 function card(x){
 const d=S.drivers[x.did]||{},name=d.name||x.name,on=isOn(x.did);
 const info=d.age?`${esc(d.age)} сола${d.from?' · аз '+esc(d.from):''}`:'';
-return `<div class="trip"><div class="tt"><div><div class="tm">${esc(x.time)}</div><div class="dy">${esc(x.day)}</div></div><div class="pr">${esc(x.price)}<small> сомонӣ</small></div></div><div class="dr">${avatar(d,name)}<div><b>${esc(name)}</b>${d.verified?' <span class="badge ok">Санҷида шуд</span>':''}<div class="mut">${info?info+'<br>':''}${esc(d.car||x.car)} · <span class="pl">${esc(d.plate||x.plate)}</span></div>${on?'<div class="onl">● Дар роҳ, онлайн</div>':''}</div></div><div class="st" style="flex-wrap:wrap">${seatBox(x)}<span>${esc(x.seats)} ҷои холӣ</span></div><a class="btn" href="tel:${esc(tl(x.phone))}">${PH} Занг задан</a>${d.phone2?`<a class="l2" href="tel:${esc(tl(d.phone2))}">Рақами дуюм: ${esc(fmt(d.phone2))}</a>`:''}${on?`<button class="ghost" onclick="showOnMap('${esc(x.did)}')">Дар харита дидан</button>`:''}</div>`}
+return `<div class="trip"><div class="tt"><div><div class="tm">${esc(x.time)}</div><div class="dy">${esc(x.day)}</div></div><div class="pr">${esc(x.price)}<small> сомонӣ</small></div></div><div class="dr">${avatar(d,name)}<div><b>${esc(name)}</b>${d.verified?' <span class="badge ok">Санҷида шуд</span>':''}<div class="mut">${info?info+'<br>':''}${esc(d.car||x.car)} · <span class="pl">${esc(d.plate||x.plate)}</span></div>${on?'<div class="onl">● Дар роҳ, онлайн</div>':''}</div></div><div class="st" style="flex-wrap:wrap">${seatBox(x)}<span>${esc(x.seats)} ҷои холӣ</span></div><a class="btn" href="tel:${esc(tl(x.phone))}">${PH} Занг задан</a>${d.phone2?`<a class="l2" href="tel:${esc(tl(d.phone2))}">Рақами дуюм: ${esc(fmt(d.phone2))}</a>`:''}${on&&x.did!==myId()?`<button style="background:#FFC21A;color:#0F1B3D" onclick="orderTo('${esc(x.did)}')">Фармоиш додан</button>`:''}${on?`<button class="ghost" onclick="showOnMap('${esc(x.did)}')">Дар харита дидан</button>`:''}</div>`}
 function empty(t,s){return `<div class="empty">${CAR}<b>${t}</b>${s}</div>`}
 function home(){
 const list=fresh().filter(x=>x.from===S.f&&x.to===S.t).sort((a,b)=>(a.day+a.time<b.day+b.time?-1:1));
@@ -192,7 +192,7 @@ if(!S.user){alert('Аввал дар «Профил» қайд шавед');go('
 if(id===myId())return;
 const m=await getMe();if(!m){alert('Барои фармоиш мавқеи шумо лозим аст. Иҷозати мавқеъро диҳед.');return}
 const pid=myId();
-try{await deleteDoc(doc(db,'orders',pid)).catch(()=>{});await setDoc(doc(db,'orders',pid),{pid,name:(S.user.name||'Мусофир').split(' ')[0].slice(0,30),plat:Math.round(m.lat*1000)/1000,plng:Math.round(m.lng*1000)/1000,did:id,status:'new',created:Date.now()})}catch(e){alert('Фармоиш нарасид. Интернетро санҷед.')}}
+try{await deleteDoc(doc(db,'orders',pid)).catch(()=>{});await setDoc(doc(db,'orders',pid),{pid,name:(S.user.name||'Мусофир').split(' ')[0].slice(0,30),plat:Math.round(m.lat*1000)/1000,plng:Math.round(m.lng*1000)/1000,did:id,status:'new',created:Date.now()});go('map')}catch(e){alert('Фармоиш нарасид. Интернетро санҷед.')}}
 async function setOrder(pid,st){try{await updateDoc(doc(db,'orders',pid),{status:st,updated:Date.now()})}catch(e){alert('Нашуд. Интернетро санҷед.')}}
 async function doneOrder(pid){try{await deleteDoc(doc(db,'orders',pid))}catch(e){}}
 function cancelOrder(){doneOrder(myId())}
@@ -218,7 +218,7 @@ const mine=fresh().filter(x=>x.did===did(S.user)||x.phone===S.user.phone);
 return mine.length?mine.map(x=>S.editTrip===x.id?tripForm(x):`<div class="trip"><div class="tt"><div><div class="tm" style="font-size:20px">${esc(x.from)} → ${esc(x.to)}</div><div class="dy">${esc(x.day)} · ${esc(x.time)} · ${esc(x.seats)} ҷои холӣ</div></div><div style="display:flex;align-items:center;gap:8px"><div class="pr" style="font-size:20px">${esc(x.price)}</div><button class="ed" aria-label="Тағир додан" onclick="editTripF('${x.id}')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B4BD1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button></div></div><div class="st" style="flex-wrap:wrap;margin:10px 0 0">${seatBox(x)}</div><button class="ghost" onclick="delTrip('${x.id}')">Мошин пур шуд / Бекор кардан</button></div>`).join(''):empty('Эълон нест','Сафари нав илова кунед.')}
 function post(){
 if(!S.user||S.user.role!=='driver')return `<div class="card"><h2 style="margin-top:0">Эълони сафар</h2><p class="mut">Барои эълон кардани сафар аввал ҳамчун ронанда қайд шавед.</p><button onclick="go('me')">Қайд шудан</button></div>`;
-return `<div class="card"><h2 style="margin-top:0">Мавқеи ман дар харита</h2><p class="mut">Мусофирон мебинанд, ки шумо дар куҷо ҳастед. Мавқеъ танҳо вақте нав мешавад, ки барнома кушода ва экран фаъол аст.</p>${S.sharing?'<div class="onl">● Мавқеъ нишон дода мешавад</div><button class="red" onclick="stopShare()">Қатъ кардан</button>':'<button onclick="startShare()">Мавқеъро нишон додан</button>'}</div><div class="card"><h2 style="margin-top:0">Сафари нав</h2><label>Аз</label><select id="pf">${opts('Данғара')}</select><label>Ба</label><select id="pt">${opts('Душанбе')}</select><label>Рӯз</label><select id="pd"><option>Имрӯз</option><option>Фардо</option></select><label>Вақти ҳаракат</label><input id="pm" type="time"><label>Ҷойҳои холӣ</label><input id="ps" type="number" min="1" max="8" value="3"><label>Нарх (сомонӣ)</label><input id="pp" type="number" min="0"><button onclick="addTrip()">Эълон кардан</button></div><h2>Эълонҳои ман</h2><div id="mine">${mineHtml()}</div>`}
+return `<div class="card"><h2 style="margin-top:0">Мавқеи ман дар харита</h2><p class="mut">Мавқеи шумо худкор ба мусофирон намоён мешавад, вақте ки барнома кушода ва экран фаъол аст. Мусофир фармоиш медиҳад, шумо қабул ё рад мекунед.</p>${S.sharing?'<div class="onl">● Мавқеъ худкор нишон дода мешавад</div><button class="red" onclick="stopShare(true)">Қатъ кардан</button>':'<button onclick="startShare()">Боз фаъол кардан</button>'}</div><div class="card"><h2 style="margin-top:0">Сафари нав</h2><label>Аз</label><select id="pf">${opts('Данғара')}</select><label>Ба</label><select id="pt">${opts('Душанбе')}</select><label>Рӯз</label><select id="pd"><option>Имрӯз</option><option>Фардо</option></select><label>Вақти ҳаракат</label><input id="pm" type="time"><label>Ҷойҳои холӣ</label><input id="ps" type="number" min="1" max="8" value="3"><label>Нарх (сомонӣ)</label><input id="pp" type="number" min="0"><button onclick="addTrip()">Эълон кардан</button></div><h2>Эълонҳои ман</h2><div id="mine">${mineHtml()}</div>`}
 async function addTrip(){
 const m=$('pm').value,p=$('pp').value,a=$('pf').value,b=$('pt').value;
 if(!m||!p){alert('Вақт ва нархро нависед');return}
@@ -228,7 +228,7 @@ async function delTrip(id){try{await deleteDoc(doc(db,'trips',id))}catch(e){aler
 let wid=null,lastW=0,lock=null;
 async function startShare(){
 if(!navigator.geolocation){alert('Телефони шумо мавқеъро намедиҳад');return}
-S.sharing=true;lastW=0;
+S.sharing=true;lastW=0;try{localStorage.removeItem('noshare')}catch(e){}
 try{lock=await navigator.wakeLock.request('screen')}catch(e){}
 wid=navigator.geolocation.watchPosition(pos=>{
 const now=Date.now();if(now-lastW<10000)return;lastW=now;
@@ -237,7 +237,8 @@ setDoc(doc(db,'live',did(S.user)),{lat:pos.coords.latitude,lng:pos.coords.longit
 ()=>{alert('Мавқеъ гирифта нашуд. Дар танзимоти телефон иҷозати мавқеъро диҳед.');stopShare()},
 {enableHighAccuracy:true,maximumAge:5000,timeout:20000});
 render()}
-function stopShare(){
+function stopShare(manual){
+if(manual)save('noshare',1);
 S.sharing=false;if(wid!=null&&navigator.geolocation)navigator.geolocation.clearWatch(wid);wid=null;
 try{lock&&lock.release()}catch(e){}lock=null;
 if(S.user)deleteDoc(doc(db,'live',did(S.user))).catch(()=>{});
@@ -248,7 +249,7 @@ if(S.user){const u=S.user,d=u.role==='driver',pd=S.drivers[did(u)]||u;
 return `<div class="card" style="position:relative"><button class="ed abs" aria-label="Тағир додан" onclick="editProf(true)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B4BD1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button><div class="dr" style="margin-top:0;padding-right:48px">${avatar(pd,u.name,64)}<div><b style="font-size:19px">${esc(u.name)}</b><div style="margin-top:4px"><span class="badge${d?' y':''}">${d?'Ронанда':'Муштарӣ'}</span>${d&&pd.verified?'<span class="badge ok">Санҷида шуд</span>':''}</div></div></div><div class="mut">Телефон</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">${esc(fmt(u.phone))}${pd.phone2?'<br>'+esc(fmt(pd.phone2)):''}</div>${d&&pd.age?`<div class="mut">Синну сол · аз куҷо</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">${esc(pd.age)} сола · ${esc(pd.from)}</div>`:''}${d?`<div class="mut">Мошин</div><div style="font-size:17px;font-weight:600">${esc(pd.car||u.car)} <span class="pl">${esc(pd.plate||u.plate)}</span></div>${pd.verified?'':'<p class="mut">Шиноснома ҳанӯз санҷида нашудааст.</p>'}`:''}<button class="ghost" onclick="logout()">Баромадан</button></div>`}
 if(!S.role)return `<h2 style="margin-top:0">Шумо кистед?</h2><button class="big" onclick="pick('customer')">Муштарӣ<small>Ман такси мехоҳам</small></button><button class="big y" onclick="pick('driver')">Ронанда (такси)<small>Ман мусофир мебарам</small></button>`;
 const d=S.role==='driver';
-return `<div class="card"><h2 style="margin-top:0">${d?'Қайди ронанда':'Қайди муштарӣ'}</h2>${d?`<label>Акси шумо (рӯй)</label><input id="ph" type="file" accept="image/*" onchange="pickFile('photo',this)"><img id="pv_photo" class="pv" alt="">`:''}<label>Ном ва насаб</label><input id="rn">${d?`<label>Синну сол</label><input id="ra" type="number" inputmode="numeric" min="18" max="75" placeholder="35"><label>Аз куҷо ҳастед</label><select id="rf">${opts('Данғара')}</select>`:''}<label>Рақами телефон (+992)</label><input id="rp" type="tel" inputmode="numeric" placeholder="92 123 45 67">${d?`<label>Рақами дуюм (ихтиёрӣ)</label><input id="rp2" type="tel" inputmode="numeric" placeholder="90 123 45 67"><label>Мошин (марка)</label><input id="rc"><label>Рақами давлатии мошин</label><input id="rl"><label>Акси шиноснома (права)</label><input id="lc" type="file" accept="image/*" onchange="pickFile('lic',this)"><p class="mut" style="margin:4px 0 0">Танҳо барои санҷиш. Ба мусофирон нишон дода намешавад.</p><img id="pv_lic" class="pv" alt="">`:''}<button onclick="reg()">Қайд шудан</button><p class="mut">Тасдиқи рамзи СМС баъдтар илова мешавад.</p><button class="ghost" onclick="pick(null)">Бозгашт</button></div>`}
+return `<div class="card"><h2 style="margin-top:0">${d?'Қайди ронанда':'Қайди муштарӣ'}</h2>${d?`<label>Акси шумо (рӯй)</label><input id="ph" type="file" accept="image/*" onchange="pickFile('photo',this)"><img id="pv_photo" class="pv" alt="">`:''}<label>Ном ва насаб</label><input id="rn">${d?`<label>Синну сол</label><input id="ra" type="number" inputmode="numeric" min="18" max="75" placeholder="35"><label>Аз куҷо ҳастед</label><select id="rf">${opts('Данғара')}</select>`:''}<label>Рақами телефон (+992)</label><input id="rp" type="tel" inputmode="numeric" placeholder="92 123 45 67">${d?`<label>Рақами дуюм (ихтиёрӣ)</label><input id="rp2" type="tel" inputmode="numeric" placeholder="90 123 45 67"><label>Мошин (марка)</label><input id="rc"><label>Рақами давлатии мошин</label><input id="rl"><label>Акси шиноснома (права)</label><input id="lc" type="file" accept="image/*" onchange="pickFile('lic',this)"><p class="mut" style="margin:4px 0 0">Танҳо барои санҷиш. Ба мусофирон нишон дода намешавад.</p><img id="pv_lic" class="pv" alt="">`:''}${d?'<p class="mut">Бо қайд шудан розӣ мешавед, ки мавқеи шумо ҳангоми кушода будани барнома ба мусофирон намоён мешавад.</p>':''}<button onclick="reg()">Қайд шудан</button><p class="mut">Тасдиқи рамзи СМС баъдтар илова мешавад.</p><button class="ghost" onclick="pick(null)">Бозгашт</button></div>`}
 function img(file,max,q){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height));const c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',q))};i.onerror=no;i.src=r.result};r.onerror=no;r.readAsDataURL(file)})}
 async function pickFile(kind,inp){
 const f=inp.files&&inp.files[0];if(!f)return;
@@ -297,7 +298,7 @@ try{
 await setDoc(doc(db,'drivers',p),{name:n,age,from,phone:u.phone,phone2:u.phone2,car,plate,photo:S.tmp.photo,verified:false,created:Date.now()});
 await setDoc(doc(db,'licenses',p),{photo:S.tmp.lic,created:Date.now()}).catch(()=>{});
 }catch(e){alert('Қайд нашуд. Интернет ва қоидаҳои базаро санҷед.');return}}}
-S.user=u;save('user',u);S.tmp={};S.tab=u.role==='driver'?'post':'home';S.role=null;render()}
+S.user=u;save('user',u);S.tmp={};S.tab=u.role==='driver'?'post':'home';S.role=null;render();autoShare()}
 function logout(){stopShare();S.user=null;try{localStorage.removeItem('user')}catch(e){}render()}
 function go(t){S.tab=t;S.edit=false;S.editTrip=null;render()}
 function render(){
@@ -318,7 +319,9 @@ onSnapshot(collection(db,'live'),s=>{const old=S.live;S.live={};s.docs.forEach(d
 onSnapshot(collection(db,'orders'),s=>{const old=S.orders;S.orders={};s.docs.forEach(d=>{S.orders[d.id]=d.data()});if(incoming().some(([k,o])=>o.status==='new'&&!(old[k]&&old[k].status==='new')))try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}refresh()},()=>{});
 Object.assign(window,{orderTo,setOrder,doneOrder,cancelOrder,findMe,editProf,saveProf,editTripF,saveTrip,seatTap,go,quick,swap,search,addTrip,delTrip,pick,reg,logout,render,S,pickFile,startShare,stopShare,showOnMap});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-render();
+function autoShare(){if(S.user&&S.user.role==='driver'&&!S.sharing&&!load('noshare'))startShare()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.sharing){try{navigator.wakeLock.request('screen').then(l=>{lock=l}).catch(()=>{})}catch(e){}}});
+render();autoShare();
 </script>
 </body>
 </html>
