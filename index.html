@@ -106,7 +106,7 @@ const CAR='<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#
 const CARW='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5zM3 12h18"/></svg>';
 function load(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-const S={user:load('user'),trips:[],drivers:{},live:{},err:'',loaded:false,tab:'home',role:null,f:'Данғара',t:'Душанбе',tmp:{},sharing:false,focus:null,map:null,layer:null};
+const S={edit:false,editTrip:null,user:load('user'),trips:[],drivers:{},live:{},err:'',loaded:false,tab:'home',role:null,f:'Данғара',t:'Душанбе',tmp:{},sharing:false,focus:null,map:null,layer:null};
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dig(p){return String(p||'').replace(/\D/g,'').replace(/^992/,'')}
@@ -134,7 +134,7 @@ function avatar(d,name,sz){const im=safeImg(d&&d.photo),st=sz?`style="width:${sz
 function card(x){
 const d=S.drivers[x.did]||{},name=d.name||x.name,on=isOn(x.did);
 const info=d.age?`${esc(d.age)} сола${d.from?' · аз '+esc(d.from):''}`:'';
-return `<div class="trip"><div class="tt"><div><div class="tm">${esc(x.time)}</div><div class="dy">${esc(x.day)}</div></div><div class="pr">${esc(x.price)}<small> сомонӣ</small></div></div><div class="dr">${avatar(d,name)}<div><b>${esc(name)}</b>${d.verified?' <span class="badge ok">Санҷида шуд</span>':''}<div class="mut">${info?info+'<br>':''}${esc(x.car)} · <span class="pl">${esc(x.plate)}</span></div>${on?'<div class="onl">● Дар роҳ, онлайн</div>':''}</div></div><div class="st" style="flex-wrap:wrap">${seatBox(x)}<span>${esc(x.seats)} ҷои холӣ</span></div><a class="btn" href="tel:${esc(tl(x.phone))}">${PH} Занг задан</a>${d.phone2?`<a class="l2" href="tel:${esc(tl(d.phone2))}">Рақами дуюм: ${esc(fmt(d.phone2))}</a>`:''}${on?`<button class="ghost" onclick="showOnMap('${esc(x.did)}')">Дар харита дидан</button>`:''}</div>`}
+return `<div class="trip"><div class="tt"><div><div class="tm">${esc(x.time)}</div><div class="dy">${esc(x.day)}</div></div><div class="pr">${esc(x.price)}<small> сомонӣ</small></div></div><div class="dr">${avatar(d,name)}<div><b>${esc(name)}</b>${d.verified?' <span class="badge ok">Санҷида шуд</span>':''}<div class="mut">${info?info+'<br>':''}${esc(d.car||x.car)} · <span class="pl">${esc(d.plate||x.plate)}</span></div>${on?'<div class="onl">● Дар роҳ, онлайн</div>':''}</div></div><div class="st" style="flex-wrap:wrap">${seatBox(x)}<span>${esc(x.seats)} ҷои холӣ</span></div><a class="btn" href="tel:${esc(tl(x.phone))}">${PH} Занг задан</a>${d.phone2?`<a class="l2" href="tel:${esc(tl(d.phone2))}">Рақами дуюм: ${esc(fmt(d.phone2))}</a>`:''}${on?`<button class="ghost" onclick="showOnMap('${esc(x.did)}')">Дар харита дидан</button>`:''}</div>`}
 function empty(t,s){return `<div class="empty">${CAR}<b>${t}</b>${s}</div>`}
 function home(){
 const list=fresh().filter(x=>x.from===S.f&&x.to===S.t).sort((a,b)=>(a.day+a.time<b.day+b.time?-1:1));
@@ -166,7 +166,7 @@ if(fm){S.map.setView(fm.getLatLng(),12);fm.openPopup();S.focus=null}}
 function showOnMap(id){S.focus=id;go('map')}
 function mineHtml(){
 const mine=fresh().filter(x=>x.did===did(S.user)||x.phone===S.user.phone);
-return mine.length?mine.map(x=>`<div class="trip"><div class="tt"><div><div class="tm" style="font-size:20px">${esc(x.from)} → ${esc(x.to)}</div><div class="dy">${esc(x.day)} · ${esc(x.time)} · ${esc(x.seats)} ҷои холӣ</div></div><div class="pr" style="font-size:20px">${esc(x.price)}</div></div><div class="st" style="flex-wrap:wrap;margin:10px 0 0">${seatBox(x)}</div><button class="ghost" onclick="delTrip('${x.id}')">Мошин пур шуд / Бекор кардан</button></div>`).join(''):empty('Эълон нест','Сафари нав илова кунед.')}
+return mine.length?mine.map(x=>S.editTrip===x.id?tripForm(x):`<div class="trip"><div class="tt"><div><div class="tm" style="font-size:20px">${esc(x.from)} → ${esc(x.to)}</div><div class="dy">${esc(x.day)} · ${esc(x.time)} · ${esc(x.seats)} ҷои холӣ</div></div><div class="pr" style="font-size:20px">${esc(x.price)}</div></div><div class="st" style="flex-wrap:wrap;margin:10px 0 0">${seatBox(x)}</div><button class="ghost" onclick="editTripF('${x.id}')">Тағир додан</button><button class="ghost" onclick="delTrip('${x.id}')">Мошин пур шуд / Бекор кардан</button></div>`).join(''):empty('Эълон нест','Сафари нав илова кунед.')}
 function post(){
 if(!S.user||S.user.role!=='driver')return `<div class="card"><h2 style="margin-top:0">Эълони сафар</h2><p class="mut">Барои эълон кардани сафар аввал ҳамчун ронанда қайд шавед.</p><button onclick="go('me')">Қайд шудан</button></div>`;
 return `<div class="card"><h2 style="margin-top:0">Мавқеи ман дар харита</h2><p class="mut">Мусофирон мебинанд, ки шумо дар куҷо ҳастед. Мавқеъ танҳо вақте нав мешавад, ки барнома кушода ва экран фаъол аст.</p>${S.sharing?'<div class="onl">● Мавқеъ нишон дода мешавад</div><button class="red" onclick="stopShare()">Қатъ кардан</button>':'<button onclick="startShare()">Мавқеъро нишон додан</button>'}</div><div class="card"><h2 style="margin-top:0">Сафари нав</h2><label>Аз</label><select id="pf">${opts('Данғара')}</select><label>Ба</label><select id="pt">${opts('Душанбе')}</select><label>Рӯз</label><select id="pd"><option>Имрӯз</option><option>Фардо</option></select><label>Вақти ҳаракат</label><input id="pm" type="time"><label>Ҷойҳои холӣ</label><input id="ps" type="number" min="1" max="8" value="3"><label>Нарх (сомонӣ)</label><input id="pp" type="number" min="0"><button onclick="addTrip()">Эълон кардан</button></div><h2>Эълонҳои ман</h2><div id="mine">${mineHtml()}</div>`}
@@ -194,8 +194,9 @@ try{lock&&lock.release()}catch(e){}lock=null;
 if(S.user)deleteDoc(doc(db,'live',did(S.user))).catch(()=>{});
 render()}
 function me(){
+if(S.user&&S.edit)return editForm();
 if(S.user){const u=S.user,d=u.role==='driver',pd=S.drivers[did(u)]||u;
-return `<div class="card"><div class="dr" style="margin-top:0">${avatar(pd,u.name,64)}<div><b style="font-size:19px">${esc(u.name)}</b><div style="margin-top:4px"><span class="badge${d?' y':''}">${d?'Ронанда':'Муштарӣ'}</span>${d&&pd.verified?'<span class="badge ok">Санҷида шуд</span>':''}</div></div></div><div class="mut">Телефон</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">${esc(fmt(u.phone))}${pd.phone2?'<br>'+esc(fmt(pd.phone2)):''}</div>${d&&pd.age?`<div class="mut">Синну сол · аз куҷо</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">${esc(pd.age)} сола · ${esc(pd.from)}</div>`:''}${d?`<div class="mut">Мошин</div><div style="font-size:17px;font-weight:600">${esc(u.car)} <span class="pl">${esc(u.plate)}</span></div>${pd.verified?'':'<p class="mut">Шиноснома пас аз санҷиш тасдиқ мешавад.</p>'}`:''}<button class="ghost" onclick="logout()">Баромадан</button></div>`}
+return `<div class="card"><div class="dr" style="margin-top:0">${avatar(pd,u.name,64)}<div><b style="font-size:19px">${esc(u.name)}</b><div style="margin-top:4px"><span class="badge${d?' y':''}">${d?'Ронанда':'Муштарӣ'}</span>${d&&pd.verified?'<span class="badge ok">Санҷида шуд</span>':''}</div></div></div><div class="mut">Телефон</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">${esc(fmt(u.phone))}${pd.phone2?'<br>'+esc(fmt(pd.phone2)):''}</div>${d&&pd.age?`<div class="mut">Синну сол · аз куҷо</div><div style="font-size:17px;font-weight:600;margin-bottom:10px">${esc(pd.age)} сола · ${esc(pd.from)}</div>`:''}${d?`<div class="mut">Мошин</div><div style="font-size:17px;font-weight:600">${esc(pd.car||u.car)} <span class="pl">${esc(pd.plate||u.plate)}</span></div>${pd.verified?'':'<p class="mut">Шиноснома пас аз санҷиш тасдиқ мешавад.</p>'}`:''}<button onclick="editProf(true)">Тағир додани профил</button><button class="ghost" onclick="logout()">Баромадан</button></div>`}
 if(!S.role)return `<h2 style="margin-top:0">Шумо кистед?</h2><button class="big" onclick="pick('customer')">Муштарӣ<small>Ман такси мехоҳам</small></button><button class="big y" onclick="pick('driver')">Ронанда (такси)<small>Ман мусофир мебарам</small></button>`;
 const d=S.role==='driver';
 return `<div class="card"><h2 style="margin-top:0">${d?'Қайди ронанда':'Қайди муштарӣ'}</h2>${d?`<label>Акси шумо (рӯй)</label><input id="ph" type="file" accept="image/*" onchange="pickFile('photo',this)"><img id="pv_photo" class="pv" alt="">`:''}<label>Ном ва насаб</label><input id="rn">${d?`<label>Синну сол</label><input id="ra" type="number" inputmode="numeric" min="18" max="75" placeholder="35"><label>Аз куҷо ҳастед</label><select id="rf">${opts('Данғара')}</select>`:''}<label>Рақами телефон (+992)</label><input id="rp" type="tel" inputmode="numeric" placeholder="92 123 45 67">${d?`<label>Рақами дуюм (ихтиёрӣ)</label><input id="rp2" type="tel" inputmode="numeric" placeholder="90 123 45 67"><label>Мошин (марка)</label><input id="rc"><label>Рақами давлатии мошин</label><input id="rl"><label>Акси шиноснома (права)</label><input id="lc" type="file" accept="image/*" onchange="pickFile('lic',this)"><p class="mut" style="margin:4px 0 0">Танҳо барои санҷиш. Ба мусофирон нишон дода намешавад.</p><img id="pv_lic" class="pv" alt="">`:''}<button onclick="reg()">Қайд шудан</button><p class="mut">Тасдиқи рамзи СМС баъдтар илова мешавад.</p><button class="ghost" onclick="pick(null)">Бозгашт</button></div>`}
@@ -203,6 +204,29 @@ function img(file,max,q){return new Promise((ok,no)=>{const r=new FileReader();r
 async function pickFile(kind,inp){
 const f=inp.files&&inp.files[0];if(!f)return;
 try{S.tmp[kind]=await img(f,kind==='lic'?900:220,kind==='lic'?0.7:0.6);const p=$('pv_'+kind);if(p){p.src=S.tmp[kind];p.style.display='block'}}catch(e){alert('Акс кушода нашуд. Акси дигар интихоб кунед.')}}
+function editForm(){const u=S.user,d=u.role==='driver',pd=S.drivers[did(u)]||u;
+return `<div class="card"><h2 style="margin-top:0">Тағир додани профил</h2>${d?`<label>Акси рӯй (на шиноснома)</label><div style="display:flex;align-items:center;gap:12px">${avatar(pd,u.name,56)}<input id="ph" type="file" accept="image/*" onchange="pickFile('photo',this)"></div><img id="pv_photo" class="pv" alt="">`:''}<label>Ном ва насаб</label><input id="en" value="${esc(u.name)}">${d?`<label>Синну сол</label><input id="ea" type="number" inputmode="numeric" min="18" max="75" value="${esc(pd.age||'')}"><label>Аз куҷо</label><select id="ef">${opts(pd.from||'Данғара')}</select><label>Рақами дуюм (ихтиёрӣ)</label><input id="ep2" type="tel" inputmode="numeric" value="${esc(pd.phone2?dig(pd.phone2):'')}" placeholder="90 123 45 67"><label>Мошин (марка)</label><input id="ec" value="${esc(pd.car||u.car||'')}"><label>Рақами давлатии мошин</label><input id="el" value="${esc(pd.plate||u.plate||'')}">`:''}<p class="mut">Рақами асосии телефонро иваз кардан мумкин нест.</p><button onclick="saveProf()">Нигоҳ доштан</button><button class="ghost" onclick="editProf(false)">Бекор кардан</button></div>`}
+function editProf(v){S.edit=v;S.tmp={};render()}
+async function saveProf(){
+const u=S.user,d=u.role==='driver',n=$('en').value.trim();
+if(!n){alert('Номро нависед');return}
+if(!d){u.name=n;save('user',u);S.edit=false;render();return}
+const age=parseInt($('ea').value),v2=$('ep2').value.trim(),p2=v2?ph(v2):'',car=$('ec').value.trim(),plate=$('el').value.trim();
+if(!(age>=18&&age<=75)){alert('Синну солро дуруст нависед (аз 18 то 75)');return}
+if(v2&&!p2){alert('Рақами дуюм нодуруст аст');return}
+if(!car||!plate){alert('Мошин ва рақамро нависед');return}
+const upd={name:n,age,from:$('ef').value,phone2:p2?'+992'+p2:'',car,plate};
+if(S.tmp.photo)upd.photo=S.tmp.photo;
+try{await updateDoc(doc(db,'drivers',did(u)),upd)}catch(e){alert('Нигоҳ дошта нашуд. Интернет ва қоидаҳои базаро санҷед.');return}
+Object.assign(u,{name:n,age,from:upd.from,phone2:upd.phone2,car,plate});save('user',u);S.tmp={};S.edit=false;render()}
+function tripForm(x){return `<div class="trip"><b>${esc(x.from)} → ${esc(x.to)}</b><label>Рӯз</label><select id="td"><option${x.day==='Имрӯз'?' selected':''}>Имрӯз</option><option${x.day==='Фардо'?' selected':''}>Фардо</option></select><label>Вақти ҳаракат</label><input id="tm" type="time" value="${esc(x.time)}"><label>Нарх (сомонӣ)</label><input id="tp" type="number" min="0" value="${esc(x.price)}"><button onclick="saveTrip('${x.id}')">Нигоҳ доштан</button><button class="ghost" onclick="editTripF(null)">Бекор кардан</button></div>`}
+function editTripF(id){S.editTrip=id;refresh()}
+async function saveTrip(id){
+const x=S.trips.find(t=>t.id===id),m=$('tm').value,p=$('tp').value;
+if(!x||!m||!p){alert('Вақт ва нархро нависед');return}
+const upd={day:$('td').value,time:m,price:p};
+try{await updateDoc(doc(db,'trips',id),upd)}catch(e){alert('Нигоҳ дошта нашуд. Интернет ва қоидаҳои базаро санҷед.');return}
+Object.assign(x,upd);S.editTrip=null;refresh()}
 function pick(r){S.role=r;S.tmp={};render()}
 async function reg(){
 const n=$('rn').value.trim(),p=ph($('rp').value);
@@ -226,7 +250,7 @@ await setDoc(doc(db,'licenses',p),{photo:S.tmp.lic,created:Date.now()}).catch(()
 }catch(e){alert('Қайд нашуд. Интернет ва қоидаҳои базаро санҷед.');return}}}
 S.user=u;save('user',u);S.tmp={};S.tab=u.role==='driver'?'post':'home';S.role=null;render()}
 function logout(){stopShare();S.user=null;try{localStorage.removeItem('user')}catch(e){}render()}
-function go(t){S.tab=t;render()}
+function go(t){S.tab=t;S.edit=false;S.editTrip=null;render()}
 function render(){
 if(S.map){S.map.remove();S.map=null}
 $('hd').className=S.tab==='home'?'':'bar';
@@ -242,7 +266,7 @@ const ERR='Базаи маълумот пайваст нашуд. Қоидаҳо
 onSnapshot(collection(db,'trips'),s=>{S.trips=s.docs.map(d=>({...d.data(),id:d.id}));S.err='';S.loaded=true;refresh()},()=>{S.err=ERR;refresh()});
 onSnapshot(collection(db,'drivers'),s=>{S.drivers={};s.docs.forEach(d=>{S.drivers[d.id]=d.data()});refresh()},()=>{});
 onSnapshot(collection(db,'live'),s=>{S.live={};s.docs.forEach(d=>{S.live[d.id]=d.data()});refresh()},()=>{});
-Object.assign(window,{seatTap,go,quick,swap,search,addTrip,delTrip,pick,reg,logout,render,S,pickFile,startShare,stopShare,showOnMap});
+Object.assign(window,{editProf,saveProf,editTripF,saveTrip,seatTap,go,quick,swap,search,addTrip,delTrip,pick,reg,logout,render,S,pickFile,startShare,stopShare,showOnMap});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
 </script>
