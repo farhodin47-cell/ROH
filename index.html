@@ -160,7 +160,8 @@ const el=$('map');if(!el)return;
 if(!window.L){el.innerHTML=empty('Харита боргирӣ нашуд','Интернетро санҷед ва саҳифаро нав кунед.');return}
 S.map=L.map('map').setView([38.6,70.8],7);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(S.map);
-S.layer=L.layerGroup().addTo(S.map);markers()}
+S.layer=L.layerGroup().addTo(S.map);markers();
+if(!S.me&&!S.askedMe){S.askedMe=1;getMe().then(m=>{if(m&&S.map){S.map.setView([m.lat,m.lng],11);markers();if($('near'))$('near').innerHTML=nearHtml()}})}else if(S.me)S.map.setView([S.me.lat,S.me.lng],11)}
 function markers(){
 if(!S.map)return;S.layer.clearLayers();let fm=null;const id=myId(),o=myOrder();
 liveList().forEach(x=>{
@@ -200,7 +201,7 @@ function ordHtml(){
 const id=myId();let h='';const o=myOrder();
 if(o){const d=S.drivers[o.did]||{},l=S.live[o.did],k=l?dist(l.lat,l.lng,o.plat,o.plng):null;
 const t={new:'Интизори ҷавоби ронанда…',accepted:'Ронанда қабул кард ва меояд',arrived:'Ронанда расид!',declined:'Ронанда рад кард. Ронандаи дигарро интихоб кунед.'}[o.status]||'';
-h+=`<div class="card"><b>${esc(d.name||'Ронанда')}</b><div class="mut">${esc(d.car||'')} ${esc(d.plate||'')}</div><p style="font-weight:700;margin:8px 0">${t}</p>${o.status==='accepted'&&k!=null?`<p class="mut">Масофа: ${fmtKm(k)} · тақрибан ${eta(k)} дақиқа</p>`:''}${d.phone&&o.status!=='declined'?`<a class="btn" href="tel:${esc(tl(d.phone))}">${PH} Занг задан</a>`:''}<button class="ghost" onclick="cancelOrder()">${o.status==='declined'?'Пӯшидан':'Фармоишро бекор кардан'}</button></div>`}
+h+=`<div class="card"><b>${esc(d.name||'Ронанда')}</b><div class="mut">${esc(d.car||'')} ${esc(d.plate||'')}</div><p style="font-weight:700;margin:8px 0">${t}</p>${o.status==='accepted'&&k!=null?(k<0.15?`<p style="font-weight:700;color:#1E7A46">Ронанда расид ё хеле наздик аст (${fmtKm(k)})</p>`:`<p class="mut">Масофа: ${fmtKm(k)} · тақрибан ${eta(k)} дақиқа</p>`):''}${d.phone&&o.status!=='declined'?`<a class="btn" href="tel:${esc(tl(d.phone))}">${PH} Занг задан</a>`:''}<button class="ghost" onclick="cancelOrder()">${o.status==='declined'?'Пӯшидан':'Фармоишро бекор кардан'}</button></div>`}
 incoming().forEach(([pid,o])=>{const l=S.live[id];
 h+=`<div class="card" style="border:2px solid #FFC21A"><b>Мусофир: ${esc(o.name)}</b><div class="mut">${l?'Масофа: '+fmtKm(dist(l.lat,l.lng,o.plat,o.plng)):'Барои дидани масофа «Онлайн шудан»-ро пахш кунед'}</div>${o.status==='new'?`<button onclick="setOrder('${pid}','accepted')">Қабул кардан</button><button class="ghost" onclick="setOrder('${pid}','declined')">Рад кардан</button>`:`<button onclick="setOrder('${pid}','arrived')">Расидам</button><button class="ghost" onclick="doneOrder('${pid}')">Анҷом ёфт</button>`}</div>`});
 return h}
@@ -226,7 +227,21 @@ if(a===b){alert('Самти «аз» ва «ба» набояд яксон бо�
 try{await addDoc(collection(db,'trips'),{from:a,to:b,day:$('pd').value,time:m,seats:$('ps').value,total:Math.max(4,parseInt($('ps').value)||0),price:p,name:S.user.name,car:S.user.car,plate:S.user.plate,phone:S.user.phone,did:did(S.user),created:Date.now()});$('pm').value='';$('pp').value=''}catch(e){alert('Эълон нашуд. Интернет ва қоидаҳои базаро санҷед.')}}
 async function delTrip(id){try{await deleteDoc(doc(db,'trips',id))}catch(e){alert('Нашуд. Боз кӯшиш кунед.')}}
 let wid=null,lastW=0,lock=null;
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const BGP=NATIVE?Capacitor.registerPlugin('BackgroundGeolocation'):null;
+const FSURL='https://firestore.googleapis.com/v1/projects/taxi-roh/databases/(default)/documents/live/',FSKEY='AIzaSyBZUDW6O-VnJp5ZZJMbOJxGpYV0DB4NEkY';
+function nativePush(lat,lng){
+const u=S.user,id=did(u),my=fresh().filter(x=>x.did===id).sort((a,b)=>b.created-a.created)[0]||{},sv=v=>({stringValue:String(v)});
+return Capacitor.Plugins.CapacitorHttp.request({url:FSURL+id+'?key='+FSKEY,method:'PATCH',headers:{'Content-Type':'application/json'},data:{fields:{lat:{doubleValue:lat},lng:{doubleValue:lng},t:{integerValue:String(Date.now())},name:sv(u.name),did:sv(id),from:sv(my.from||''),to:sv(my.to||'')}}}).then(r=>{if(r.status>=300&&!S.warned){S.warned=1;alert('Мавқеъ ба база нарасид ('+r.status+'). Қоидаҳои Firestore-ро санҷед.')}}).catch(()=>{})}
+async function nativeStart(){
+S.sharing=true;lastW=0;try{localStorage.removeItem('noshare')}catch(e){}
+try{await Capacitor.Plugins.LocalNotifications.requestPermissions()}catch(e){}
+try{S.bgId=await BGP.addWatcher({backgroundTitle:'Таксии байни ноҳияҳо',backgroundMessage:'Мавқеи шумо ба мусофирон нишон дода мешавад',requestPermissions:true,stale:false},(loc,err)=>{
+if(err){if(err.code==='NOT_AUTHORIZED'){alert('Иҷозати мавқеъ лозим аст. Дар танзимоти телефон иҷозат диҳед.');try{BGP.openSettings()}catch(e){}}stopShare();return}
+const now=Date.now();if(now-lastW<10000)return;lastW=now;nativePush(loc.latitude,loc.longitude)})}catch(e){S.sharing=false;alert('Мавқеъ оғоз нашуд')}
+render()}
 async function startShare(){
+if(NATIVE){return nativeStart()}
 if(!navigator.geolocation){alert('Телефони шумо мавқеъро намедиҳад');return}
 S.sharing=true;lastW=0;try{localStorage.removeItem('noshare')}catch(e){}
 try{lock=await navigator.wakeLock.request('screen')}catch(e){}
@@ -239,6 +254,7 @@ setDoc(doc(db,'live',did(S.user)),{lat:pos.coords.latitude,lng:pos.coords.longit
 render()}
 function stopShare(manual){
 if(manual)save('noshare',1);
+if(NATIVE&&S.bgId!=null){try{BGP.removeWatcher({id:S.bgId})}catch(e){}S.bgId=null}
 S.sharing=false;if(wid!=null&&navigator.geolocation)navigator.geolocation.clearWatch(wid);wid=null;
 try{lock&&lock.release()}catch(e){}lock=null;
 if(S.user)deleteDoc(doc(db,'live',did(S.user))).catch(()=>{});
