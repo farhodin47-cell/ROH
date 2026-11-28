@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Таксии байни ноҳияҳо</title>
+<script>
+(function(){function nat(){try{return !!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())}catch(e){return false}}
+function show(m){if(!nat()&&location.search.indexOf('debug')<0)return;var d=document.getElementById('errbox');if(!d){d=document.createElement('div');d.id='errbox';d.style.cssText='position:fixed;left:8px;right:8px;bottom:70px;z-index:99999;background:#fff;border:2px solid #b00020;border-radius:12px;padding:10px;font:12px sans-serif;color:#b00020;word-break:break-all;max-height:40vh;overflow:auto';d.onclick=function(){d.remove()};document.body.appendChild(d)}d.textContent='Хато: '+m}
+window.addEventListener('error',function(e){var t=e.target;show((e.message||'')+' '+((t&&t.src)?'['+t.src+']':'')+' '+(e.filename||'')+':'+(e.lineno||''))},true);
+window.addEventListener('unhandledrejection',function(e){show('Promise: '+((e.reason&&e.reason.message)||e.reason))})})();
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0B4BD1">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -228,7 +234,7 @@ try{await addDoc(collection(db,'trips'),{from:a,to:b,day:$('pd').value,time:m,se
 async function delTrip(id){try{await deleteDoc(doc(db,'trips',id))}catch(e){alert('Нашуд. Боз кӯшиш кунед.')}}
 let wid=null,lastW=0,lock=null;
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
-const BGP=NATIVE?Capacitor.registerPlugin('BackgroundGeolocation'):null;
+let BGP=null;try{if(NATIVE)BGP=Capacitor.registerPlugin('BackgroundGeolocation')}catch(e){}
 const FSURL='https://firestore.googleapis.com/v1/projects/taxi-roh/databases/(default)/documents/live/',FSKEY='AIzaSyBZUDW6O-VnJp5ZZJMbOJxGpYV0DB4NEkY';
 function nativePush(lat,lng){
 const u=S.user,id=did(u),my=fresh().filter(x=>x.did===id).sort((a,b)=>b.created-a.created)[0]||{},sv=v=>({stringValue:String(v)});
