@@ -234,7 +234,7 @@ try{await addDoc(collection(db,'trips'),{from:a,to:b,day:$('pd').value,time:m,se
 async function delTrip(id){try{await deleteDoc(doc(db,'trips',id))}catch(e){alert('Нашуд. Боз кӯшиш кунед.')}}
 let wid=null,lastW=0,lock=null;
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
-let BGP=null;try{if(NATIVE)BGP=Capacitor.registerPlugin('BackgroundGeolocation')}catch(e){}
+let BGP=null;try{if(NATIVE)BGP=(Capacitor.Plugins&&Capacitor.Plugins.BackgroundGeolocation)||(Capacitor.registerPlugin&&Capacitor.registerPlugin('BackgroundGeolocation'))}catch(e){}
 const FSURL='https://firestore.googleapis.com/v1/projects/taxi-roh/databases/(default)/documents/live/',FSKEY='AIzaSyBZUDW6O-VnJp5ZZJMbOJxGpYV0DB4NEkY';
 function nativePush(lat,lng){
 const u=S.user,id=did(u),my=fresh().filter(x=>x.did===id).sort((a,b)=>b.created-a.created)[0]||{},sv=v=>({stringValue:String(v)});
@@ -244,10 +244,10 @@ S.sharing=true;lastW=0;try{localStorage.removeItem('noshare')}catch(e){}
 try{await Capacitor.Plugins.LocalNotifications.requestPermissions()}catch(e){}
 try{S.bgId=await BGP.addWatcher({backgroundTitle:'Таксии байни ноҳияҳо',backgroundMessage:'Мавқеи шумо ба мусофирон нишон дода мешавад',requestPermissions:true,stale:false},(loc,err)=>{
 if(err){if(err.code==='NOT_AUTHORIZED'){alert('Иҷозати мавқеъ лозим аст. Дар танзимоти телефон иҷозат диҳед.');try{BGP.openSettings()}catch(e){}}stopShare();return}
-const now=Date.now();if(now-lastW<10000)return;lastW=now;nativePush(loc.latitude,loc.longitude)})}catch(e){S.sharing=false;alert('Мавқеъ оғоз нашуд')}
+const now=Date.now();if(now-lastW<10000)return;lastW=now;nativePush(loc.latitude,loc.longitude)})}catch(e){S.sharing=false;S.nativeFail=1;alert('Мавқеи пасзамина оғоз нашуд: '+((e&&(e.message||e.code))||e)+'. Мавқеъ ҳангоми кушода будани барнома кор мекунад.');return startShare()}
 render()}
 async function startShare(){
-if(NATIVE){return nativeStart()}
+if(NATIVE&&!S.nativeFail){return nativeStart()}
 if(!navigator.geolocation){alert('Телефони шумо мавқеъро намедиҳад');return}
 S.sharing=true;lastW=0;try{localStorage.removeItem('noshare')}catch(e){}
 try{lock=await navigator.wakeLock.request('screen')}catch(e){}
